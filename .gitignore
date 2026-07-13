@@ -1,0 +1,18 @@
+# Build artifacts (downloaded core, assembled pak)
+build/
+
+# Binaries (not version-controlled — re-fetch via deploy_phase_a.sh)
+_roms/
+artwork/*.zip
+
+# Empty placeholder dirs
+dist/
+
+# Phase B work area
+tmp/
+
+# IDE
+.idea/
+
+# OS
+.DS_Store
