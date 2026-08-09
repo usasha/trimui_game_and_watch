@@ -62,6 +62,7 @@ fi
     -artpath "$USERDATA_PATH/mame/artwork" \
     -cfg_directory "$USERDATA_PATH/mame/cfg" \
     -video accel \
+    -view Internal \
     -sound sdl \
     -skip_gameinfo \
     -autosave \
