@@ -48,7 +48,7 @@ tar_to_remote() {
     local local_dir="$1"
     local remote_dir="$2"
     ${SSH} "mkdir -p '${remote_dir}'"
-    tar -C "${local_dir}" -cf - . | ${SSH} "tar -C '${remote_dir}' -xf -"
+    tar --exclude='._*' -C "${local_dir}" -cf - . | ${SSH} "tar -C '${remote_dir}' -xf -"
 }
 
 # --- Pre-check ---------------------------------------------------------------
@@ -80,14 +80,14 @@ deploy_to_device() {
     # Control scheme + views (global default.cfg + per-game cfgs)
     log "Deploying MAME cfg files..."
     ${SSH} "mkdir -p '${DEVICE_MAME_CFG}'"
-    tar -C "${CFG_SRC}" -cf - . | ${SSH} "tar -C '${DEVICE_MAME_CFG}' -xf -"
+    tar --exclude='._*' -C "${CFG_SRC}" -cf - . | ${SSH} "tar -C '${DEVICE_MAME_CFG}' -xf -"
 
     # Artwork (used only if a view selects it; Internal view ignores it)
     log "Deploying artwork..."
     if ls "${ARTWORK_SRC}"/*.zip > /dev/null 2>&1; then
         ${SSH} "mkdir -p '${DEVICE_MAME_ART}'"
         for f in "${ARTWORK_SRC}"/*.zip; do
-            tar -C "$(dirname "$f")" -cf - "$(basename "$f")" | \
+            tar --exclude='._*' -C "$(dirname "$f")" -cf - "$(basename "$f")" | \
                 ${SSH} "tar -C '${DEVICE_MAME_ART}' -xf -"
         done
     fi
