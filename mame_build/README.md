@@ -58,10 +58,10 @@ writes:
 | B | Game B |
 | Select | Time |
 | X | quit back to NextUI (UI Cancel) |
-| Start | open MAME in-game menu (UI Select) |
+| Start | open MAME in-game menu (UI Configure - the TAB key in 0.223) |
 
-In the MAME menu: D-pad navigates, A confirms, X goes back, X on the
-main menu quits the game.
+In the MAME menu: D-pad navigates, A confirms (UI Select/Enter), X goes
+back, X on the main menu quits the game.
 
 The mapping lives in `mame_build/cfg/default.cfg` as MAME type-based
 defaults. Device button->SDL order: `0=B 1=A 2=Y 3=X 6=Select 7=Start`.
