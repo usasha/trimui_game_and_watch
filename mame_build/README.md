@@ -35,6 +35,27 @@ Build flags of note:
   runtime; lld keeps the final link within the 8 GB VM.
 - `NO_X11=1 NO_OPENGL=1` etc. - no desktop video/audio deps.
 
+## Performance patches
+
+`build.sh` auto-applies every script in `patches/` to the MAME source
+before compiling, then verifies the edits took effect (build fails if a
+patch cannot be applied). All patches are idempotent.
+
+- `patches/0001_svg_skip_unchanged.py` (`src/emu/screen.cpp`)
+  The G&W SVG screen was re-rendered every frame even when no segment
+  changed: a full-screen background memcpy (~7.2 MB at 1671x1080) plus
+  scalar blits of every lit segment. The patch makes `svg_renderer::render`
+  return `UPDATE_HAS_NOT_CHANGED` when no output changed since the last
+  committed draw, so the frame skips both the re-render and the texture
+  re-upload. Commit-tracking via `screen.m_curbitmap` keeps it correct
+  when combined with frameskip.
+- `patches/0002_svg_half_res.py` (`src/mame/drivers/hh_sm510.cpp`)
+  Halves the SVG screen size in `mcfg_svg_screen()` (1671x1080 ->
+  835x540), cutting every resolution-scaled cost 4x (render memcpy,
+  blits, texture upload, GPU source read). LCD segments are large flat
+  shapes, so the difference is invisible once scaled to the 1024x768
+  panel.
+
 ## Deploying
 
     ./deploy.sh           # assembles + uploads GW.pak, cfg files, artwork
@@ -73,9 +94,13 @@ MAME input tokens are player-prefixed (`P1_JOYSTICK_LEFT`,
 
 - `-video accel` uses the SDL accelerated (EGL) renderer - about 2x faster
   than the software renderer on the Brick.
-- Expect ~35% of full speed in the default view with artwork; the Internal
-  view (no artwork) is lighter. The LCD SVG render (1671x1080) dominates.
-  G&W games remain playable at these rates (low-motion LCD games).
+- With the patches above + `-frameskip 4` in `launch.sh`, gnw_ball runs at
+  ~90% of full speed (measured via the `bench_seconds` mechanism). The
+  frameskip skips the OSD present on 4 of 5 frames (the SVG screen update
+  is skipped by MAME's own frameskip path too); the patches remove the
+  redundant re-render/upload work that remains.
+- Before the patches, the LCD SVG render (1671x1080) dominated and the
+  Internal view ran at ~46%, the full console view at ~25%.
 
 ## Diagnostics
 

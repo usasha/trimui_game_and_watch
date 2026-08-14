@@ -59,6 +59,20 @@ apply_patches() {
     done
 }
 
+# --- Step 2c: Verify pinned patches took effect ------------------------------
+verify_patches() {
+    log "Verifying patches took effect..."
+    if ! grep -q "m_last_draw_bitmap" "${MAME_SRC}/src/emu/screen.cpp"; then
+        err "Patch 0001 (svg skip-unchanged) did not apply to screen.cpp"
+        exit 1
+    fi
+    if ! grep -q "set_size(width / 2, height / 2)" "${MAME_SRC}/src/mame/drivers/hh_sm510.cpp"; then
+        err "Patch 0002 (svg half-res) did not apply to hh_sm510.cpp"
+        exit 1
+    fi
+    log "Patches verified."
+}
+
 # --- Step 3: Build MAME inside the container --------------------------------
 build_mame() {
     log "Building MAME ${MAME_TAG} (full build)..."
@@ -231,6 +245,7 @@ main() {
 
     clone_mame "${no_clone}"
     apply_patches
+    verify_patches
     if [ -f "${OUT_DIR}/mame" ] && [ -z "${force}" ]; then
         log "mame binary already exists in ${OUT_DIR} - skipping build (--force to rebuild)"
     else
