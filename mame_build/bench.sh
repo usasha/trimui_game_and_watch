@@ -1,9 +1,9 @@
 #!/bin/sh
 # =============================================================================
-# Headless benchmark of native MAME on the device (no display contention).
-# Runs the game for N seconds with the SDL "dummy" video driver and reports
-# MAME's built-in average speed. Also validates that the binary + bundled
-# SDL2 load correctly on the device.
+# Headless benchmark of native MAME on the device.
+# Runs the game for N seconds with the device's mali SDL video driver and
+# reports MAME's built-in average speed. The screen shows the game briefly;
+# the device sleeps if left idle afterwards.
 #
 # Usage: ./bench.sh [game=gnw_ball] [seconds=30]
 # =============================================================================
@@ -32,5 +32,5 @@ ${SSH} "cd '${PAK}' && \
         -rompath '${ROMS}' \
         -artpath '${MAME_HOME}/artwork' \
         -cfg_directory '${MAME_HOME}/cfg' \
-        -video soft -sound none -skip_gameinfo \
+        -video accel -sound none -skip_gameinfo \
         -str ${SECONDS} -verbose 2>&1 | grep -E 'Video: |Average speed|Sound: |Joystick|Input: Adding|Starting|Initialization failed|error|SDL'"

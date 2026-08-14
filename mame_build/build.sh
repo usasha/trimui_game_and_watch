@@ -123,7 +123,11 @@ build_mame() {
     # regeneration - regeneration bumps Makefile mtimes, and every object
     # depends on $(MAKEFILE), causing a full rebuild on the next run.
     if [ -f "${MAME_SRC}/3rdparty/genie/bin/linux/genie" ]; then
-        touch -d '2 hours ago' "${MAME_SRC}/3rdparty/genie/bin/linux/genie"
+        if [ "$(uname)" = "Darwin" ]; then
+            touch -t "$(date -v-2H +%Y%m%d%H%M.%S)" "${MAME_SRC}/3rdparty/genie/bin/linux/genie"
+        else
+            touch -d '2 hours ago' "${MAME_SRC}/3rdparty/genie/bin/linux/genie"
+        fi
     fi
 }
 

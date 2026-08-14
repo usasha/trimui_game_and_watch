@@ -67,5 +67,6 @@ fi
     -skip_gameinfo \
     -autosave \
     -sleep \
+    -frameskip 4 \
     $BENCH \
     > "$LOGS_PATH/$EMU_TAG.txt" 2>&1
