@@ -2,7 +2,7 @@
 # =============================================================================
 # Deploy native MAME GW.pak to the TrimUI Brick via SSH (tar-over-ssh)
 #
-# Replaces the libretro GW.pak with the standalone MAME pak:
+# Deploys the standalone native MAME pak:
 #   Emus/tg5040/GW.pak/  -> mame, lib/libSDL2-2.0.so.0, launch.sh
 # Artwork + MAME cfg stay in $USERDATA_PATH/mame/ (already deployed).
 #
@@ -13,7 +13,6 @@
 #
 # Usage:
 #   ./deploy.sh             # deploy pak
-#   ./deploy.sh --smoke     # deploy + headless benchmark (see bench.sh)
 # =============================================================================
 set -e
 
