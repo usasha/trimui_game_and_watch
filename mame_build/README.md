@@ -102,6 +102,37 @@ MAME input tokens are player-prefixed (`P1_JOYSTICK_LEFT`,
 - Before the patches, the LCD SVG render (1671x1080) dominated and the
   Internal view ran at ~46%, the full console view at ~25%.
 
+## Upstream status + future speedup ideas
+
+MAME git history was surveyed (Aug 2026) for post-0.223 G&W/SVG rendering
+work. Nothing worth porting:
+
+- The only upstream attempt at SVG skip-unchanged rendering
+  (`svg_renderer: Flag when output contents have not changed`, Nov 2021,
+  PR #8791) was **reverted 2 days later** - it caused input lag / frame
+  pacing jitter on tight games (gnw_dkjr) because video.cpp skips
+  throttle/speed recompute on "unchanged" frames. Our patch 0001 is that
+  same idea plus a commit-tracking guard (`m_curbitmap`) it lacked; the
+  input-lag caveat still applies - check 0001 first if controls feel laggy.
+- nanosvg re-base (2023) and all later render/screen/driver changes are
+  correctness or refactors only; no renderer threading was ever added.
+
+Remaining speedup approaches, roughly in order of effort:
+
+1. Full console view: ship a stripped custom `.lay` (drop dust/gradient/
+   bubbles/fix layers; keep backdrop + unit + screen) - artwork-zip only,
+   no rebuild.
+2. 30 Hz screen refresh (`set_refresh_hz(30)` in hh_sm510) - halves all
+   per-second render work; game logic is MCU-clock-driven so speed is
+   unaffected.
+3. Build flags: `OPTIMIZE=3` + `-mtune=cortex-a53` (recover the ~30% the
+   old mystery binary had over this build).
+4. NEON blit/upload loops for the hot scalar paths (svg segment blits,
+   texture row copies).
+5. Structural: custom mini-frontend driving MAME headless (`-video none`)
+   and rendering segments directly via SDL output notifiers - guaranteed
+   full speed, weeks of work.
+
 ## Diagnostics
 
 - `bench.sh [game] [seconds]` - headless speed benchmark over SSH
