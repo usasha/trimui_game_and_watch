@@ -1,17 +1,7 @@
-# Build artifacts (downloaded core, assembled pak)
-build/
-
-# Binaries (not version-controlled — re-fetch via deploy_phase_a.sh)
-_roms/
+# Artwork zips (not version-controlled — big binaries, present on device)
 artwork/*.zip
 
-# Empty placeholder dirs
-dist/
-
-# Phase B work area
-tmp/
-
-# Phase C (native MAME) work areas
+# Native MAME (mame_build) work areas
 mame_build/mame_src/
 mame_build/out/
 mame_build/*.log
