@@ -1,6 +1,6 @@
 #!/bin/sh
 # =============================================================================
-# GW.pak launcher: native MAME 0.223 standalone emulator for Game & Watch
+# GW_MAME.pak launcher: native MAME 0.223 standalone emulator for Game & Watch
 #
 # Standalone pak - no NextUI in-game menu / resume / quicksave integration.
 # Quit back to NextUI with the X button (UI Cancel binding in cfg files).
@@ -25,10 +25,12 @@ export LD_LIBRARY_PATH="/usr/trimui/lib:$PAK_DIR/lib:$LD_LIBRARY_PATH"
 export SDL_VIDEODRIVER=mali
 export SDL_AUDIODRIVER=alsa
 
-# MAME HOME + config/artwork locations on the SD card
+# MAME HOME + per-user data on the SD card (nvram, artwork). The cfg files
+# (control scheme + view presets) ship INSIDE the pak under cfg/ - no seeding
+# into userdata; a pak update restores factory settings.
 export HOME="$USERDATA_PATH/mame"
 mkdir -p "$HOME"
-mkdir -p "$USERDATA_PATH/mame/cfg" "$USERDATA_PATH/mame/artwork"
+mkdir -p "$USERDATA_PATH/mame/artwork"
 
 # Restore NextUI brightness/volume around the standalone binary
 if [ -f "$SDCARD_PATH/.system/$PLATFORM/bin/syncsettings.elf" ]; then
@@ -48,19 +50,20 @@ if [ -f "$USERDATA_PATH/mame/inputtest" ]; then
     ./mame "$GAME" \
         -rompath "$(dirname "$ROM")" \
         -artpath /nonexistent \
+        -cfg_directory "$PAK_DIR/cfg" \
         -video accel \
         -sound none \
         -skip_gameinfo \
         -verbose \
         -str 30 \
-        > /mnt/SDCARD/.userdata/tg5040/logs/GW.txt 2>&1
+        > "$LOGS_PATH/$EMU_TAG.txt" 2>&1
     exit 0
 fi
 
 ./mame "$GAME" \
     -rompath "$(dirname "$ROM")" \
     -artpath "$USERDATA_PATH/mame/artwork" \
-    -cfg_directory "$USERDATA_PATH/mame/cfg" \
+    -cfg_directory "$PAK_DIR/cfg" \
     -video accel \
     -view Internal \
     -sound sdl \

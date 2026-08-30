@@ -1,7 +1,7 @@
 # Native MAME for Game & Watch on TrimUI Brick (NextUI / tg5040)
 
 Standalone MAME 0.223 binary for playing Game & Watch on the TrimUI Brick,
-packaged as a NextUI `GW.pak`.
+packaged as a NextUI `GW_MAME.pak` (`GW_MAME.pakz` for distribution).
 
 ## Why this exists
 
@@ -56,18 +56,39 @@ patch cannot be applied). All patches are idempotent.
   shapes, so the difference is invisible once scaled to the 1024x768
   panel.
 
-## Deploying
+## Deploying to a device (dev loop)
 
-    ./deploy.sh           # assembles + uploads GW.pak, cfg files, artwork
+    DEVICE_IP=192.168.1.100 DEVICE_PASS=<pw> ./deploy.sh
 
-The device must be reachable via SSH (default `root@192.168.1.107`,
-override with `DEVICE_IP=...`). This replaces `Emus/tg5040/GW.pak` and
-writes:
-- `Emus/tg5040/GW.pak/` - `mame`, `lib/` (SDL2_ttf/fontconfig chain),
-  `launch.sh`
-- `.userdata/tg5040/mame/cfg/` - `default.cfg` (global controls),
-  `gnw_ball.cfg`, `gnw_mariocm.cfg`, `gnw_fire.cfg` (Internal view)
-- `.userdata/tg5040/mame/artwork/` - optional artwork zips
+The device must be reachable via SSH (dropbear). The script assembles and
+uploads the pak:
+- `Emus/tg5040/GW_MAME.pak/` — `mame`, `lib/` (SDL2_ttf/fontconfig chain),
+  `launch.sh`, `cfg/` (controls + per-game view presets), `README.md`,
+  `LICENSE`
+
+Device IP/user/password are **env-only** (no hardcoded defaults - this repo
+is public); `bench.sh` works the same way.
+
+## Packaging and releasing (Pak Store)
+
+The pak is distributed as `GW_MAME.pakz` - a zip containing a full SD-card
+slice (`Emus/tg5040/GW_MAME.pak/` + an empty `Roms/Game & Watch MAME
+(GW_MAME)/` folder so the system shows up after install).
+
+    ./package.sh                     # assemble + zip + sha256 + verify
+    ./release.sh v1.0.0 [--pre]      # package + create the GitHub release
+
+`release.sh` publishes `dist/GW_MAME.pakz` + `.sha256` with `gh` and
+requires the release tag to exactly match `version` in `../pak.json`
+(3-part semver, e.g. `v1.0.0`). The pak has **no CI build** - builds run
+locally in Docker and releases are published from the build machine.
+
+Pak Store integration: the store reads `pak.json` at the repo root, matches
+the release tag to `version`, and unzips the `.pakz` at the SD card root.
+After testing a release on-device, submit it via the [New Pak Submission
+issue form](https://github.com/LoveRetro/nextui-pak-store/issues/new?template=new-pak-submission.yml).
+The repo must be public (the store fetches `pak.json` and release assets
+anonymously).
 
 ## Controls (global scheme, all G&W games)
 
@@ -84,11 +105,17 @@ writes:
 In the MAME menu: D-pad navigates, A confirms (UI Select/Enter), X goes
 back, X on the main menu quits the game.
 
-The mapping lives in `mame_build/cfg/default.cfg` as MAME type-based
-defaults. Device button->SDL order: `0=B 1=A 2=Y 3=X 6=Select 7=Start`.
-MAME input tokens are player-prefixed (`P1_JOYSTICK_LEFT`,
-`P1_BUTTON1`, `P1_SELECT`) except player-0 types (`START1`, `START2`,
-`UI_CANCEL`) - see `src/emu/inpttype.ipp` token rules.
+The mapping lives in `cfg/default.cfg` as MAME type-based defaults. Device
+button->SDL order: `0=B 1=A 2=Y 3=X 6=Select 7=Start`. MAME input tokens
+are player-prefixed (`P1_JOYSTICK_LEFT`, `P1_BUTTON1`, `P1_SELECT`) except
+player-0 types (`START1`, `START2`, `UI_CANCEL`) - see
+`src/emu/inpttype.ipp` token rules.
+
+The cfg files ship **inside** the pak and MAME writes to them directly, so:
+- a clean install works without seeding anything to `.userdata/`
+- in-game menu changes persist, but are reset when the pak is updated
+- nvram/hiscores still live under `$USERDATA_PATH/mame` (HOME) and survive
+  updates
 
 ## Performance notes
 
@@ -101,6 +128,14 @@ MAME input tokens are player-prefixed (`P1_JOYSTICK_LEFT`,
   redundant re-render/upload work that remains.
 - Before the patches, the LCD SVG render (1671x1080) dominated and the
   Internal view ran at ~46%, the full console view at ~25%.
+
+## Optional case artwork
+
+The pak does **not** ship artwork (fan-art zips are ~31 MB, unused by the
+default Internal view, and not version-controlled). Users who want the
+full-console view can drop artwork zips (`gnw_ball.zip`, ...) into
+`.userdata/tg5040/mame/artwork/` - `launch.sh` already points `-artpath`
+there. Local development copies live in `artwork/` (gitignored).
 
 ## Upstream status + future speedup ideas
 
@@ -136,6 +171,7 @@ Remaining speedup approaches, roughly in order of effort:
 ## Diagnostics
 
 - `bench.sh [game] [seconds]` - headless speed benchmark over SSH
+  (env creds, like `deploy.sh`)
 - `sdl_present_test.c`, `joydump.c` - SDL present/joystick debug tools
   (build with the SDK SDL2 headers; run inside the pak via the
   `inputtest` flag in `launch.sh`)
@@ -148,3 +184,11 @@ Remaining speedup approaches, roughly in order of effort:
 - The "mali" SDL video driver can wedge the display if MAME is killed
   abruptly (SIGKILL) - reboot the device if the screen stays black.
 - NextUI auto-sleep can kick in during idle benchmark sessions.
+- In-game menu changes reset on pak update (cfg is shipped inside the pak).
+
+## Licensing
+
+`../LICENSE` is GPL-2.0. The shipped `mame` binary is a modified MAME 0.223
+build; the upstream tag, build environment, and every source patch are
+pinned in this repo (`pins.env`, `Dockerfile`, `patches/`), satisfying the
+GPL source offer for anyone receiving the binary.

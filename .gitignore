@@ -4,6 +4,7 @@ artwork/*.zip
 # Native MAME (mame_build) work areas
 mame_build/mame_src/
 mame_build/out/
+mame_build/dist/
 mame_build/*.log
 mame_build/joydump
 mame_build/present_test
